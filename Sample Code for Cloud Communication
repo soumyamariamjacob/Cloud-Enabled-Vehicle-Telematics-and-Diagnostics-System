@@ -1,0 +1,57 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+
+// Replace with your Wi-Fi credentials and server URL
+const char* ssid = "your_SSID";
+const char* password = "your_PASSWORD";
+const char* serverUrl = "https://your-cloud-server.com/api/vehicle-data";
+
+// Initialize Wi-Fi
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("Connected to Wi-Fi");
+}
+
+// Send data to the cloud
+void sendDataToCloud(float engineTemp, float fuelLevel) {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(serverUrl);
+
+    http.addHeader("Content-Type", "application/json");
+
+    String payload = "{";
+    payload += "\"engineTemp\": " + String(engineTemp) + ",";
+    payload += "\"fuelLevel\": " + String(fuelLevel);
+    payload += "}";
+
+    int httpResponseCode = http.POST(payload);
+
+    if (httpResponseCode > 0) {
+      String response = http.getString();
+      Serial.println("Response: " + response);
+    } else {
+      Serial.println("Error: " + String(httpResponseCode));
+    }
+
+    http.end();
+  } else {
+    Serial.println("Not connected to Wi-Fi");
+  }
+}
+
+void loop() {
+  // Example data
+  float engineTemp = 85.5; // Replace with actual sensor data
+  float fuelLevel = 50.0;  // Replace with actual sensor data
+
+  sendDataToCloud(engineTemp, fuelLevel);
+
+  delay(60000); // Send data every minute
+}
